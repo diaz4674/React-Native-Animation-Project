@@ -7,6 +7,8 @@ import {
 } from 'react-native'
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SWIPE_THRESHOLD = 0.25 * SCREEN_WIDTH
+const SWIPE_OUT_DURATION = 250
 
 class Deck extends React.Component {
     constructor(props){
@@ -18,10 +20,33 @@ class Deck extends React.Component {
             onPanResponderMove: (evt, gestureState) => {
                 position.setValue({x: gestureState.dx, y: gestureState.dy })
             },
-            onPanResponderRelease: () => {}
+            onPanResponderRelease: (evt, gestureState) => {
+                if(gestureState.dx > SWIPE_THRESHOLD){
+                    this.forceSwipe('right')
+                } else if (gestureState.dx < -SWIPE_THRESHOLD){
+                    this.forceSwipe('left')
+                } else {
+                    this.resetPosition()
+                }
+                
+            }
         })
         this.position = position
     } 
+
+    forceSwipe(direction){
+        const x = direction === 'right' ? SCREEN_WIDTH : -SCREEN_WIDTH;
+
+        Animated.timing(this.position, {
+            toValue: { x, y: 0 },
+            duration: SWIPE_OUT_DURATION
+        }).start()
+    }
+    resetPosition(){
+        Animated.spring(this.position, {
+            toValue: { x: 0, y: 0 }
+        }).start()
+    }
     
     getCardStyle() {
         const rotate =  this.position.x.interpolate({
